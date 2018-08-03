@@ -1,0 +1,42 @@
+{
+  "name": "amap-cluster-canvas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "高德地图点聚合插件canvas版本",
+  "main": "./src/index",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liuweiGL/amap-cluster-canvas.git"
+  },
+  "keywords": [
+    "amap",
+    "cluster"
+  ],
+  "author": "liuweigl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liuweiGL/amap-cluster-canvas/issues"
+  },
+  "homepage": "https://github.com/liuweiGL/amap-cluster-canvas#readme",
+  "scripts": {
+    "dev": "webpack-dev-server --inline --progress --config webpack.dev.js",
+    "start": "npm run dev",
+    "deploy": "webpack --config webpack.prod.js"
+  },
+  "dependencies": {
+    "html-webpack-plugin": "^3.2.0",
+    "webpack-dev-server": "^3.1.5"
+  },
+  "devDependencies": {
+    "@webpack-cli/init": "^0.1.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
+    "babel-plugin-syntax-dynamic-import": "^6.18.0",
+    "babel-preset-env": "^1.7.0",
+    "css-loader": "^1.0.0",
+    "mini-css-extract-plugin": "^0.4.1",
+    "style-loader": "^0.21.0",
+    "webpack": "^4.16.4",
+    "webpack-cli": "^3.1.0"
+  }
+}
