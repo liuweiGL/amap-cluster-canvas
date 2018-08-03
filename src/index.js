@@ -15,11 +15,6 @@ function drawText(ctx, x, y, text, color = 'white') {
   ctx.fillText(text, x, y)
 }
 
-function drawRect(ctx, x, y, width, height, color = 'green') {
-  ctx.fillStyle = color
-  ctx.fillRect(x, y, width, height)
-}
-
 function random(basic, offset) {
   let change = Math.random() * offset
   change = Math.random() > 0.5 ? change : -change
@@ -30,7 +25,7 @@ const data = []
 const Longitude = 117.000923
 const latitude = 36.675807
 for (let i = 0; i < 100000; i++) {
-  data.push([random(Longitude, 30), random(latitude, 10)])
+  data.push([random(Longitude, 10), random(latitude, 5)])
 }
 const map = new AMap.Map('container', {
   zoom: 11,
@@ -41,18 +36,17 @@ AMap.plugin('AMap.CustomLayer', function() {
   const cluster = new Cluster({
     map,
     data,
+    // type: 'zoom',
     getPosition: (item) => item,
     render(ctx, x, y, width, height, point) {
       const { isCluster, data } = point
-      ctx.fillStyle
       if (isCluster) {
         drawCircle(ctx, x, y, width / 2)
         drawText(ctx, x, y, data.getCount())
       } else {
-        drawCircle(ctx, x, y, width / 6)
-        drawRect(ctx, x, y, width / 10, height / 6)
+        drawCircle(ctx, x, y, width / 6, 'green')
       }
     }
   })
-  console.log(cluster)
+  window.cluster = cluster
 })

@@ -1,5 +1,6 @@
 import Canvas from './canvas'
 import ClusterItem from './clusterItem'
+import { lonLat2Mercator, mercator2LonLat } from './utils'
 
 // 开发环境输出日志
 const debug = process.env.NODE_ENV === 'development'
@@ -50,8 +51,7 @@ export default class Cluster {
       ...defaultOptions,
       ...options
     }
-    this.zoom = null // 处理坐标时，当前地图的层级
-    this.points = null // 聚合点+实体点 = 渲染点
+    this.points = [] // 聚合点+实体点 = 渲染点
     this.buildFn = null // 聚合构建器
     this.pixelFn = null // 还原点坐标到相对地图容器的坐标
     this.lastPixel = {} // 触发事件的坐标
@@ -139,17 +139,22 @@ export default class Cluster {
     } else {
       this.buildFn = () => {
         const zoom = map.getZoom()
+        const bounds = this._getExtendedBounds()
         const options = {
           averageCenter,
           gridSize: gridSize * Math.pow(2, 18 - zoom)
         }
-        this.zoom = zoom // 反转经纬度的时候使用
         this.data.forEach((item) => {
           const location = getPosition(item)
+          // 反转经纬度的时候使用
           if (location) {
             // 经纬度转换为墨卡托坐标
-            item.coordinate = map.lnglatToPixel(location, zoom)
-            this._buildClusterItem(item, options)
+            if (!item.coordinate) {
+              item.coordinate = lonLat2Mercator(location)
+            }
+            if (this._pointInScreen(bounds, item.coordinate)) {
+              this._buildClusterItem(item, options)
+            }
           }
         })
       }
@@ -157,7 +162,6 @@ export default class Cluster {
   }
   _createPixelFn() {
     const {
-      zoom,
       options: { type, map }
     } = this
     if (type === ClusterTypes.PIXEL) {
@@ -165,7 +169,7 @@ export default class Cluster {
     } else {
       this.pixelFn = (coordinate) => {
         // 墨卡托坐标=>经纬度
-        const lnglat = map.pixelToLngLat(coordinate, zoom)
+        const lnglat = mercator2LonLat(coordinate)
         // 经纬度=>相对地图容器的坐标
         return map.lngLatToContainer(lnglat)
       }
@@ -179,6 +183,7 @@ export default class Cluster {
     if (this.data) {
       this.buildFn()
       this._updatePoints()
+      this.render()
     }
     if (debug) {
       console.timeEnd('聚合构建时间：')
@@ -242,15 +247,15 @@ export default class Cluster {
   }
   _customEngine() {
     // 重要：当图层发生变动时，自动调用render函数
-    this.renderEngine.layer.render = this.render.bind(this)
+    this.renderEngine.layer.render =  this._buildCluster.bind(this)
   }
   _bindEvent() {
     const {
       options: { map }
     } = this
     // 更新视图
-    map.on('moveend', this._buildCluster.bind(this))
-    map.on('zoomchange', this._buildCluster.bind(this))
+    // map.on('moveend', this._buildCluster.bind(this))
+    // map.on('zoomchange', this._buildCluster.bind(this))
     // 实现canvas事件
     map.on('click', this._clickHandler.bind(this)) // => point click 事件
     map.on('mousemove', this._mousemoveHandler.bind(this)) // => point hover 事件
@@ -333,54 +338,6 @@ export default class Cluster {
       map.zoomIn()
     }
   }
-  _findEventPoint(mousePoint) {
-    // 查找鼠标下面的点，因为聚合点跟实体点的大小可能不一致，所以要分开查找
-    const {
-      points,
-      _constains,
-      options: { normalPointStyle, clusterPointStyle }
-    } = this
-    const _clusterPoints = []
-    const _normalPoints = []
-    points.forEach((item) => {
-      if (this._isCluster(item)) {
-        _clusterPoints.push(item)
-      } else {
-        _normalPoints.push(item)
-      }
-    })
-    for (let i = 0, len1 = _clusterPoints.length; i < len1; i++) {
-      const item = _clusterPoints[i]
-      if (_constains(item.coordinate, mousePoint, clusterPointStyle)) {
-        return item
-      }
-    }
-    for (let k = 0, len2 = _normalPoints.length; k < len2; k++) {
-      const item = _normalPoints[k]
-      if (_constains(item.coordinate, mousePoint, normalPointStyle)) {
-        return item
-      }
-    }
-    return null
-  }
-  _constains(p1, p2, style) {
-    // 绘画的时候是以 `p1` 作为中心点
-    const { width, height } = style
-    const { x: x1, y: y1 } = p1
-    const { x: x2, y: y2 } = p2
-    return (
-      x2 >= x1 - width / 2 &&
-      x2 <= x1 + width / 2 &&
-      y2 >= y1 - height / 2 &&
-      y2 <= y1 + height / 2
-    )
-  }
-  _isFunction(fn) {
-    return typeof fn === 'function'
-  }
-  _isCluster(point) {
-    return point instanceof ClusterItem
-  }
   _drawHoverPoint(params) {
     const {
       options: { hoverRender, normalPointStyle, clusterPointStyle },
@@ -428,5 +385,77 @@ export default class Cluster {
       renderEngine: { hoverCanvas }
     } = this
     renderEngine.setCanvasSize(hoverCanvas, 0, 0)
+  }
+  _findEventPoint(mousePoint) {
+    // 查找鼠标下面的点，因为聚合点跟实体点的大小可能不一致，所以要分开查找
+    const {
+      points,
+      _constains,
+      options: { normalPointStyle, clusterPointStyle }
+    } = this
+    const _clusterPoints = []
+    const _normalPoints = []
+    points.forEach((item) => {
+      if (this._isCluster(item)) {
+        _clusterPoints.push(item)
+      } else {
+        _normalPoints.push(item)
+      }
+    })
+    for (let i = 0, len1 = _clusterPoints.length; i < len1; i++) {
+      const item = _clusterPoints[i]
+      if (_constains(item.coordinate, mousePoint, clusterPointStyle)) {
+        return item
+      }
+    }
+    for (let k = 0, len2 = _normalPoints.length; k < len2; k++) {
+      const item = _normalPoints[k]
+      if (_constains(item.coordinate, mousePoint, normalPointStyle)) {
+        return item
+      }
+    }
+    return null
+  }
+  _constains(p1, p2, style) {
+    // 绘画的时候是以 `p1` 作为中心点
+    const { width, height } = style
+    const { x: x1, y: y1 } = p1
+    const { x: x2, y: y2 } = p2
+    return (
+      x2 >= x1 - width / 2 &&
+      x2 <= x1 + width / 2 &&
+      y2 >= y1 - height / 2 &&
+      y2 <= y1 + height / 2
+    )
+  }
+  _getExtendedBounds() {
+    const {
+      options: { map, gridSize }
+    } = this
+    const zoom = map.getZoom()
+    const bounds = map.getBounds()
+    const southWest = bounds.getSouthWest()
+    const northEast = bounds.getNorthEast()
+    // 上右
+    const tr = lonLat2Mercator([northEast.lng, northEast.lat])
+    // 下左
+    const bl = lonLat2Mercator([southWest.lng, southWest.lat])
+    const _gridSize = gridSize * Math.pow(2, 18 - zoom)
+    tr.x += _gridSize
+    tr.y += _gridSize
+    bl.x -= _gridSize
+    bl.y -= _gridSize
+    return [tr, bl]
+  }
+  _pointInScreen(bounds, coordinate) {
+    const [tr, bl] = bounds
+    const { x, y } = coordinate
+    return x >= bl.x && x <= tr.x && y >= bl.y && y <= tr.y
+  }
+  _isFunction(fn) {
+    return typeof fn === 'function'
+  }
+  _isCluster(point) {
+    return point instanceof ClusterItem
   }
 }
