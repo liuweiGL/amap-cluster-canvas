@@ -1,15 +1,17 @@
 import Cluster from './lib/cluster'
 
 function drawCircle(ctx, x, y, r, color = 'red') {
-  fillStyle = color
+  ctx.fillStyle = color
   ctx.beginPath()
-  ctx.arc(x, y, r, Math.PI * 2)
+  ctx.arc(x, y, r, 0, Math.PI * 2)
+  ctx.fill()
 }
 
 function drawText(ctx, x, y, text, color = 'white') {
   ctx.font = '18px SimHei'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
+  ctx.fillStyle = color
   ctx.fillText(text, x, y)
 }
 
@@ -34,21 +36,23 @@ const map = new AMap.Map('container', {
   zoom: 11,
   center: [Longitude, latitude]
 })
-const cluster = new Cluster({
-  map,
-  data,
-  render(ctx, x, y, width, height, point) {
-    const {
-      isCluster,
-      data
-    } = point
-    ctx.fillStyle
-    if (isCluster) {
-      drawCircle(ctx, x, y, width / 2)
-      drawText(ctx, x, y, data.getCount())
-    } else {
-      drawCircle(ctx, x, y, width / 6)
-      drawRect(ctx, x, y, width / 10, height / 6)
+// `cluster` 依赖 `AMap.CustomLayer`
+AMap.plugin('AMap.CustomLayer', function() {
+  const cluster = new Cluster({
+    map,
+    data,
+    getPosition: (item) => item,
+    render(ctx, x, y, width, height, point) {
+      const { isCluster, data } = point
+      ctx.fillStyle
+      if (isCluster) {
+        drawCircle(ctx, x, y, width / 2)
+        drawText(ctx, x, y, data.getCount())
+      } else {
+        drawCircle(ctx, x, y, width / 6)
+        drawRect(ctx, x, y, width / 10, height / 6)
+      }
     }
-  }
+  })
+  console.log(cluster)
 })

@@ -1,6 +1,9 @@
 import Canvas from './canvas'
 import ClusterItem from './clusterItem'
 
+// 开发环境输出日志
+const debug = process.env.NODE_ENV === 'development'
+
 // 聚合策略
 export const ClusterTypes = {
   ZOOM: 'zoom', // 根据缩放层级聚合
@@ -22,7 +25,8 @@ const defaultOptions = {
   zoomOnClick: true, // 点击聚合点时，是否展开聚合
   zIndex: 120, // canvas图层的zindex
   visible: true, // 是否显示
-  getPosition(item) { // 获取经纬度信息
+  getPosition(item) {
+    // 获取经纬度信息
     const { location } = item
     return location ? [location.longitude, location.latitude] : null
   },
@@ -54,7 +58,11 @@ export default class Cluster {
     this.oldHoverPoint = null // 触发事件的对象
     this.renderTimer = null
     this.clusterItems = null
-    this.renderEngine = new Canvas({ map, zIndex: this.options.zIndex, visible: this.options.visible })
+    this.renderEngine = new Canvas({
+      map,
+      zIndex: this.options.zIndex,
+      visible: this.options.visible
+    })
     this._init(data)
     this._customEngine()
     this._bindEvent()
@@ -65,15 +73,22 @@ export default class Cluster {
     }
   }
   render() {
-    const { points, options: { render, normalPointStyle, clusterPointStyle }, renderEngine: { clusterCanvasCxt } } = this
+    const {
+      points,
+      options: { render, normalPointStyle, clusterPointStyle },
+      renderEngine: { clusterCanvasCxt }
+    } = this
     if (this.renderTimer) {
       clearTimeout(this.renderTimer)
       this.renderTimer = null
     }
+    if (debug) {
+      console.time('绘制时间：')
+    }
     // 清理画布
     this.renderEngine.clearCluster()
     // 绘制
-    points.forEach(point => {
+    points.forEach((point) => {
       const pixel = this.pixelFn(point.coordinate)
       const { x, y } = pixel
       const isCluster = this._isCluster(point)
@@ -85,6 +100,9 @@ export default class Cluster {
         data: point
       })
     })
+    if (debug) {
+      console.timeEnd('绘制时间：')
+    }
   }
   setData(data) {
     this.data = data
@@ -99,7 +117,9 @@ export default class Cluster {
     this.setData(data)
   }
   _createBuildFn() {
-    const { options: { map, type, gridSize, averageCenter, getPosition } } = this
+    const {
+      options: { map, type, gridSize, averageCenter, getPosition }
+    } = this
     if (type === ClusterTypes.PIXEL) {
       this.buildFn = () => {
         const bounds = map.getBounds()
@@ -107,7 +127,7 @@ export default class Cluster {
           gridSize,
           averageCenter
         }
-        this.data.forEach(item => {
+        this.data.forEach((item) => {
           const location = getPosition(item)
           if (location && bounds.contains(location)) {
             // 经纬度转换为相对于地图容器的坐标
@@ -124,7 +144,7 @@ export default class Cluster {
           gridSize: gridSize * Math.pow(2, 18 - zoom)
         }
         this.zoom = zoom // 反转经纬度的时候使用
-        this.data.forEach(item => {
+        this.data.forEach((item) => {
           const location = getPosition(item)
           if (location) {
             // 经纬度转换为墨卡托坐标
@@ -136,7 +156,10 @@ export default class Cluster {
     }
   }
   _createPixelFn() {
-    const { zoom, options: { type, map } } = this
+    const {
+      zoom,
+      options: { type, map }
+    } = this
     if (type === ClusterTypes.PIXEL) {
       this.pixelFn = (coordinate) => coordinate
     } else {
@@ -149,20 +172,32 @@ export default class Cluster {
     }
   }
   _buildCluster() {
+    if (debug) {
+      console.time('聚合构建时间：')
+    }
     this.clusterItems = []
     if (this.data) {
       this.buildFn()
       this._updatePoints()
     }
+    if (debug) {
+      console.timeEnd('聚合构建时间：')
+      console.log('%c构建聚合模块数量：' + this.points.length, 'color: red')
+    }
   }
   _buildClusterItem(point, options) {
     let parent = null
     let distance = -1 // 当前点与聚合中心的距离
-    const { coordinate: { x: pointX, y: pointY } } = point
-    this.clusterItems.forEach(clusterItem => {
+    const {
+      coordinate: { x: pointX, y: pointY }
+    } = point
+    this.clusterItems.forEach((clusterItem) => {
       if (clusterItem.contains(point)) {
-        const { coordinate: { x: centerX, y: centerY } } = clusterItem
-        const currDistance = Math.pow(pointX - centerX, 2) + Math.pow(pointY - centerY, 2)
+        const {
+          coordinate: { x: centerX, y: centerY }
+        } = clusterItem
+        const currDistance =
+          Math.pow(pointX - centerX, 2) + Math.pow(pointY - centerY, 2)
         if (distance < 0 || distance > currDistance) {
           // 取距离最近的一个聚合
           parent = clusterItem
@@ -180,14 +215,20 @@ export default class Cluster {
     }
   }
   _updatePoints() {
-    const { clusterItems, options: { map, minClusterSize, maxZoom } } = this
+    const {
+      clusterItems,
+      options: { map, minClusterSize, maxZoom }
+    } = this
     if (map.getZoom() >= maxZoom) {
       // 地图放大最大层级，就不存在聚合点了
-      this.points = clusterItems.reduce((pre, curr) => pre.concat(curr.points), [])
+      this.points = clusterItems.reduce(
+        (pre, curr) => pre.concat(curr.points),
+        []
+      )
     } else {
       // 返回的点数据应该是聚合点+实体点
       let points = []
-      clusterItems.forEach(clusterItem => {
+      clusterItems.forEach((clusterItem) => {
         if (clusterItem.getCount() >= minClusterSize) {
           // 聚合点
           points.push(clusterItem)
@@ -204,7 +245,9 @@ export default class Cluster {
     this.renderEngine.layer.render = this.render.bind(this)
   }
   _bindEvent() {
-    const { options: { map } } = this
+    const {
+      options: { map }
+    } = this
     // 更新视图
     map.on('moveend', this._buildCluster.bind(this))
     map.on('zoomchange', this._buildCluster.bind(this))
@@ -216,7 +259,9 @@ export default class Cluster {
     const { pixel } = event
     const point = this._findEventPoint(pixel)
     if (point) {
-      const { options: { zoomOnClick, clickHandler } } = this
+      const {
+        options: { zoomOnClick, clickHandler }
+      } = this
       const params = {
         data: point,
         isCluster: this._isCluster(point)
@@ -244,13 +289,17 @@ export default class Cluster {
     this.lastPixel = pixel
   }
   mouseoutHandler(point) {
-    const { oldHoverPoint, options: { mouseoutHandler } } = this
+    const {
+      oldHoverPoint,
+      options: { mouseoutHandler }
+    } = this
     if (oldHoverPoint) {
       this._clearHoverPoint()
-      this._isFunction(mouseoutHandler) && mouseoutHandler({
-        data: oldHoverPoint,
-        isCluster: this._isCluster(oldHoverPoint)
-      })
+      this._isFunction(mouseoutHandler) &&
+        mouseoutHandler({
+          data: oldHoverPoint,
+          isCluster: this._isCluster(oldHoverPoint)
+        })
     }
     this.oldHoverPoint = point
   }
@@ -258,7 +307,9 @@ export default class Cluster {
     if (!point) {
       return
     }
-    const { options: { mouseoverHandler } } = this
+    const {
+      options: { mouseoverHandler }
+    } = this
     const params = {
       data: point,
       isCluster: this._isCluster(point)
@@ -267,9 +318,15 @@ export default class Cluster {
     this._isFunction(mouseoverHandler) && mouseoverHandler(params)
   }
   _zoomOnClickHandler(data) {
-    const { isCluster, data: { coordinate } } = data
+    const {
+      isCluster,
+      data: { coordinate }
+    } = data
     if (isCluster) {
-      const { options: { map }, pixelFn } = this
+      const {
+        options: { map },
+        pixelFn
+      } = this
       const pixel = pixelFn(coordinate)
       const lnglat = map.containerToLngLat(pixel)
       map.setCenter(lnglat)
@@ -278,10 +335,14 @@ export default class Cluster {
   }
   _findEventPoint(mousePoint) {
     // 查找鼠标下面的点，因为聚合点跟实体点的大小可能不一致，所以要分开查找
-    const { points, _constains, options: { normalPointStyle, clusterPointStyle } } = this
+    const {
+      points,
+      _constains,
+      options: { normalPointStyle, clusterPointStyle }
+    } = this
     const _clusterPoints = []
     const _normalPoints = []
-    points.forEach(item => {
+    points.forEach((item) => {
       if (this._isCluster(item)) {
         _clusterPoints.push(item)
       } else {
@@ -307,10 +368,12 @@ export default class Cluster {
     const { width, height } = style
     const { x: x1, y: y1 } = p1
     const { x: x2, y: y2 } = p2
-    return x2 >= x1 - width / 2 &&
-    x2 <= x1 + width / 2 &&
-    y2 >= y1 - height / 2 &&
-    y2 <= y1 + height / 2
+    return (
+      x2 >= x1 - width / 2 &&
+      x2 <= x1 + width / 2 &&
+      y2 >= y1 - height / 2 &&
+      y2 <= y1 + height / 2
+    )
   }
   _isFunction(fn) {
     return typeof fn === 'function'
@@ -319,10 +382,19 @@ export default class Cluster {
     return point instanceof ClusterItem
   }
   _drawHoverPoint(params) {
-    const { options: { hoverRender, normalPointStyle, clusterPointStyle }, renderEngine, renderEngine: { hoverCanvas, hoverCanvasCtx } } = this
+    const {
+      options: { hoverRender, normalPointStyle, clusterPointStyle },
+      renderEngine,
+      renderEngine: { hoverCanvas, hoverCanvasCtx }
+    } = this
     if (this._isFunction(hoverRender)) {
       const margin = 20
-      const { isCluster, data: { coordinate: { x, y } } } = params
+      const {
+        isCluster,
+        data: {
+          coordinate: { x, y }
+        }
+      } = params
       const style = isCluster ? clusterPointStyle : normalPointStyle
       const { width, height } = style
       const canvasWidth = width + margin
@@ -335,13 +407,26 @@ export default class Cluster {
       hoverCanvas.style.cursor = 'pointer'
       renderEngine.setCanvasSize(hoverCanvas, canvasWidth, canvasHeight)
       hoverCanvasCtx.save()
-      hoverCanvasCtx.translate(-canvasLeft * pixelRatio, -canvasTop * pixelRatio)
-      hoverRender(hoverCanvasCtx, canvasLeft + margin / 2, canvasTop + margin / 2, width, height, params)
-      hoverCanvasCtx.restore();
+      hoverCanvasCtx.translate(
+        -canvasLeft * pixelRatio,
+        -canvasTop * pixelRatio
+      )
+      hoverRender(
+        hoverCanvasCtx,
+        canvasLeft + margin / 2,
+        canvasTop + margin / 2,
+        width,
+        height,
+        params
+      )
+      hoverCanvasCtx.restore()
     }
   }
   _clearHoverPoint() {
-    const { renderEngine, renderEngine: { hoverCanvas } } = this
+    const {
+      renderEngine,
+      renderEngine: { hoverCanvas }
+    } = this
     renderEngine.setCanvasSize(hoverCanvas, 0, 0)
   }
 }

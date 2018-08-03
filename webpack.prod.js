@@ -10,8 +10,6 @@ const path = require('path');
  *
  */
 
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-
 /*
  * SplitChunksPlugin is enabled by default and replaced
  * deprecated CommonsChunkPlugin. It automatically identifies modules which
@@ -26,47 +24,21 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
  */
 
 module.exports = {
+  mode: 'production',
+  entry: './src/lib/cluster.js',
+  output: {
+    filename: 'amap-cluster-canvas.js',
+    path: path.resolve(__dirname, 'dist')
+  },
 	module: {
 		rules: [
 			{
-				include: [path.resolve(__dirname, 'src')],
-				loader: 'babel-loader',
-
-				options: {
-					plugins: ['syntax-dynamic-import'],
-
-					presets: [
-						[
-							'env',
-							{
-								modules: false
-							}
-						]
-					]
-				},
-
-				test: /\.js$/
-			},
-			{
-				test: /\.css$/,
-
-				use: [
-					{
-						loader: MiniCssExtractPlugin.loader
-					},
-					{
-						loader: 'css-loader',
-
-						options: {
-							sourceMap: true
-						}
-					}
-				]
+        test: /\.js$/,
+        loader: 'babel-loader',
+				include: [path.resolve(__dirname, 'src')]
 			}
 		]
 	},
-
-	mode: 'production',
 
 	optimization: {
 		splitChunks: {

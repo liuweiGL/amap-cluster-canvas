@@ -1,32 +1,33 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+const path = require("path");
 
 module.exports = {
-  entry: './src/index.js',
+  mode: "development",
+  entry: "./src/index.js",
   output: {
-    filename: 'amap-cluster-canvas.js',
-    path: path.resolve(__dirname, 'dist')
+    filename: "amap-cluster-canvas.js",
+    path: path.resolve(__dirname, "dist")
   },
   module: {
-    rules: [{
+    rules: [
+      {
         test: /\.js$/,
-        loader: 'babel-loader',
-        include: [path.resolve(__dirname, 'src')]
+        loader: "babel-loader",
+        include: [path.resolve(__dirname, "src")]
       },
       {
         test: /\.css$/,
-        loader: 'css-loader',
+        loader: "css-loader",
         options: {
           sourceMap: true
         }
       }
     ]
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      filename: 'index.html',
-      template: './index.html',
-      inject: true
-    })
-  ]
-}
+  plugins: [],
+  devtool: "eval",
+  devServer: {
+    port: 8080,
+    open: true,
+    compress: true
+  }
+};
