@@ -25,7 +25,7 @@ const data = []
 const Longitude = 117.000923
 const latitude = 36.675807
 for (let i = 0; i < 100000; i++) {
-  data.push([random(Longitude, 10), random(latitude, 5)])
+  data.push([random(Longitude, 5), random(latitude, 5)])
 }
 const map = new AMap.Map('container', {
   zoom: 11,
@@ -36,7 +36,7 @@ AMap.plugin('AMap.CustomLayer', function() {
   const cluster = new Cluster({
     map,
     data,
-    // type: 'zoom',
+    type: 'zoom',
     getPosition: (item) => item,
     render(ctx, x, y, width, height, point) {
       const { isCluster, data } = point
