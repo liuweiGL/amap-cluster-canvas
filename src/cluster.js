@@ -6,7 +6,7 @@ import {
 } from './utils'
 
 // 开发环境输出日志
-const debug = ENV === 'development'
+const debug = process.env.NODE_ENV === 'development'
 
 // 聚合策略
 export const ClusterTypes = {

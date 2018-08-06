@@ -1,5 +1,5 @@
 // import Cluster from './lib/cluster'
-import Cluster from '../dist/amap-cluster-canvas.esm.js'
+import Cluster from '../src/cluster'
 
 function drawCircle(ctx, x, y, r, color = 'red') {
   ctx.fillStyle = color
