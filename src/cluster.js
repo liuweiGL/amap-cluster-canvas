@@ -6,7 +6,7 @@ import {
 } from './utils'
 
 // 开发环境输出日志
-const debug = process.env.NODE_ENV === 'development'
+const debug = ENV === 'development'
 
 // 聚合策略
 export const ClusterTypes = {
@@ -49,16 +49,13 @@ const defaultOptions = {
   hoverClusterPointStyle: defaultStyle // hover状态下聚合点的样式
 }
 
-export default class Cluster {
+class Cluster {
   constructor(options) {
     const {
       map,
       data
     } = options
-    this.options = {
-      ...defaultOptions,
-      ...options
-    }
+    this.options = Object.assign({}, defaultOptions, options)
     this.points = [] // 聚合点+实体点 = 渲染点
     this.buildFn = null // 聚合构建器
     this.pixelFn = null // 还原点坐标到相对地图容器的坐标
@@ -547,3 +544,5 @@ export default class Cluster {
     return point instanceof ClusterItem
   }
 }
+
+export default Cluster

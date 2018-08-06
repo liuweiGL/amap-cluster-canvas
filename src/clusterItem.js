@@ -1,4 +1,4 @@
-export default class ClusterItem {
+ class ClusterItem {
   constructor(point, options) {
     this.coordinate = point.coordinate
     this.points = [point]
@@ -38,3 +38,5 @@ export default class ClusterItem {
     pointY <= centerY + gridSize
   }
 }
+
+export default ClusterItem

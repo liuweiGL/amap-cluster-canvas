@@ -7,7 +7,7 @@
  *   visible: 是否可见
  * }
  */
-export default class Canvas {
+class Canvas {
   constructor(options) {
     this.layer = null
     this.hoverCanvas = null
@@ -18,7 +18,13 @@ export default class Canvas {
     this._init()
   }
   _init() {
-    const { options: { map, visible, zIndex } } = this
+    const {
+      options: {
+        map,
+        visible,
+        zIndex
+      }
+    } = this
     const container = document.createElement('div')
     // 绘制聚合点
     const clusterCanvas = document.createElement('canvas')
@@ -54,7 +60,12 @@ export default class Canvas {
   }
   // 清除聚合
   clearCluster() {
-    const { width, height } = this.options.map.getSize()
+    const {
+      width,
+      height
+    } = this.options.map.getSize()
     this.setCanvasSize(this.clusterCanvas, width, height)
   }
 }
+
+export default Canvas
