@@ -15,7 +15,7 @@
 | zoomOnClick            | Boolean      | 点击聚合点时，是否展开聚合                       | true                                                                      |
 | zIndex                 | Number       | canvas图层的zindex                               | 120                                                                       |
 | visible                | Boolean      | 是否显示                                         | true                                                                      |
-| getPosition            | Function     | 获取经纬度信息                                   | ({location})=>location ? [location.longitude,location.latitude] : null  } |
+| getPosition            | Function     | 获取经纬度信息                                   | ({location})=>location ? [location.longitude,location.latitude] : null   |
 | render                 | Function     | 绘制函数                                         | null                                                                      |
 | hoverRender            | Function     | hover状态下的绘制函数                            | null                                                                      |
 | clickHandler           | Function     | click事件                                        | null                                                                      |
