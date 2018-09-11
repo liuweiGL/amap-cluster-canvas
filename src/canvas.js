@@ -15,15 +15,12 @@ class Canvas {
     this.clusterCanvas = null
     this.clusterCanvasCxt = null
     this.options = options
+    this.pixelRatio = this.getPixelRatio()
     this._init()
   }
   _init() {
     const {
-      options: {
-        map,
-        visible,
-        zIndex
-      }
+      options: { map, visible, zIndex }
     } = this
     const container = document.createElement('div')
     // 绘制聚合点
@@ -52,18 +49,15 @@ class Canvas {
   }
   // 设置canvas的width&height属性可以清理画布
   setCanvasSize(canvas, w, h) {
-    const pixelRatio = this.getPixelRatio();
-    canvas.width = w * pixelRatio;
-    canvas.height = h * pixelRatio;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    const { pixelRatio } = this
+    canvas.width = w * pixelRatio
+    canvas.height = h * pixelRatio
+    canvas.style.width = w + 'px'
+    canvas.style.height = h + 'px'
   }
   // 清除聚合
   clearCluster() {
-    const {
-      width,
-      height
-    } = this.options.map.getSize()
+    const { width, height } = this.options.map.getSize()
     this.setCanvasSize(this.clusterCanvas, width, height)
   }
 }

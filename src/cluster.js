@@ -1,9 +1,6 @@
 import Canvas from './canvas'
 import ClusterItem from './clusterItem'
-import {
-  lonLat2Mercator,
-  mercator2LonLat
-} from './utils'
+import { lonLat2Mercator, mercator2LonLat } from './utils'
 
 // 开发环境输出日志
 const debug = process.env.NODE_ENV === 'development'
@@ -31,9 +28,7 @@ const defaultOptions = {
   visible: true, // 是否显示
   getPosition(item) {
     // 获取经纬度信息
-    const {
-      location
-    } = item
+    const { location } = item
     return location ? [location.longitude, location.latitude] : null
   },
   render: null, // 绘制函数
@@ -51,10 +46,7 @@ const defaultOptions = {
 
 class Cluster {
   constructor(options) {
-    const {
-      map,
-      data
-    } = options
+    const { map, data } = options
     this.options = Object.assign({}, defaultOptions, options)
     this.points = [] // 聚合点+实体点 = 渲染点
     this.buildFn = null // 聚合构建器
@@ -80,14 +72,8 @@ class Cluster {
   render() {
     const {
       points,
-      options: {
-        render,
-        normalPointStyle,
-        clusterPointStyle
-      },
-      renderEngine: {
-        clusterCanvasCxt
-      }
+      options: { render, normalPointStyle, clusterPointStyle },
+      renderEngine: { pixelRatio, clusterCanvasCxt }
     } = this
     if (this.renderTimer) {
       clearTimeout(this.renderTimer)
@@ -101,21 +87,22 @@ class Cluster {
     // 绘制
     points.forEach((point) => {
       const pixel = this.pixelFn(point.coordinate)
-      const {
-        x,
-        y
-      } = pixel
+      const { x, y } = pixel
       const isCluster = this._isCluster(point)
       const style = isCluster ? clusterPointStyle : normalPointStyle
-      const {
-        width,
-        height
-      } = style
+      const { width, height } = style
       // 定位到中心位置
-      render(clusterCanvasCxt, x - width / 2, y - height / 2, width, height, {
-        isCluster,
-        data: point
-      })
+      render(
+        clusterCanvasCxt,
+        (x - width / 2) * pixelRatio,
+        (y - height / 2) * pixelRatio,
+        width,
+        height,
+        {
+          isCluster,
+          data: point
+        }
+      )
     })
     if (debug) {
       console.timeEnd('绘制时间：')
@@ -135,13 +122,7 @@ class Cluster {
   }
   _createBuildFn() {
     const {
-      options: {
-        map,
-        type,
-        gridSize,
-        averageCenter,
-        getPosition
-      }
+      options: { map, type, gridSize, averageCenter, getPosition }
     } = this
     if (type === ClusterTypes.PIXEL) {
       this.buildFn = () => {
@@ -185,10 +166,7 @@ class Cluster {
   }
   _createPixelFn() {
     const {
-      options: {
-        type,
-        map
-      }
+      options: { type, map }
     } = this
     if (type === ClusterTypes.PIXEL) {
       this.pixelFn = (coordinate) => coordinate
@@ -220,18 +198,12 @@ class Cluster {
     let parent = null
     let distance = -1 // 当前点与聚合中心的距离
     const {
-      coordinate: {
-        x: pointX,
-        y: pointY
-      }
+      coordinate: { x: pointX, y: pointY }
     } = point
     this.clusterItems.forEach((clusterItem) => {
       if (clusterItem.contains(point)) {
         const {
-          coordinate: {
-            x: centerX,
-            y: centerY
-          }
+          coordinate: { x: centerX, y: centerY }
         } = clusterItem
         const currDistance =
           Math.pow(pointX - centerX, 2) + Math.pow(pointY - centerY, 2)
@@ -254,16 +226,13 @@ class Cluster {
   _updatePoints() {
     const {
       clusterItems,
-      options: {
-        map,
-        minClusterSize,
-        maxZoom
-      }
+      options: { map, minClusterSize, maxZoom }
     } = this
     if (map.getZoom() >= maxZoom) {
       // 地图放大最大层级，就不存在聚合点了
       this.points = clusterItems.reduce(
-        (pre, curr) => pre.concat(curr.points), []
+        (pre, curr) => pre.concat(curr.points),
+        []
       )
     } else {
       // 返回的点数据应该是聚合点+实体点
@@ -286,9 +255,7 @@ class Cluster {
   }
   _bindEvent() {
     const {
-      options: {
-        map
-      }
+      options: { map }
     } = this
     // 更新视图
     // map.on('moveend', this._buildCluster.bind(this))
@@ -298,16 +265,11 @@ class Cluster {
     map.on('mousemove', this._mousemoveHandler.bind(this)) // => point hover 事件
   }
   _clickHandler(event) {
-    const {
-      pixel
-    } = event
+    const { pixel } = event
     const point = this._findEventPoint(pixel)
     if (point) {
       const {
-        options: {
-          zoomOnClick,
-          clickHandler
-        }
+        options: { zoomOnClick, clickHandler }
       } = this
       const params = {
         data: point,
@@ -322,13 +284,8 @@ class Cluster {
   }
   // 由`mousemove`衍生出 `mouseout` & `mouseover`
   _mousemoveHandler(event) {
-    const {
-      pixel
-    } = event
-    const {
-      lastPixel,
-      oldHoverPoint
-    } = this
+    const { pixel } = event
+    const { lastPixel, oldHoverPoint } = this
     if (lastPixel.x === pixel.x && lastPixel.y === pixel.y) {
       return
     }
@@ -343,9 +300,7 @@ class Cluster {
   mouseoutHandler(point) {
     const {
       oldHoverPoint,
-      options: {
-        mouseoutHandler
-      }
+      options: { mouseoutHandler }
     } = this
     if (oldHoverPoint) {
       this._clearHoverPoint()
@@ -362,9 +317,7 @@ class Cluster {
       return
     }
     const {
-      options: {
-        mouseoverHandler
-      }
+      options: { mouseoverHandler }
     } = this
     const params = {
       data: point,
@@ -376,15 +329,11 @@ class Cluster {
   _zoomOnClickHandler(data) {
     const {
       isCluster,
-      data: {
-        coordinate
-      }
+      data: { coordinate }
     } = data
     if (isCluster) {
       const {
-        options: {
-          map
-        },
+        options: { map },
         pixelFn
       } = this
       const pixel = pixelFn(coordinate)
@@ -395,33 +344,20 @@ class Cluster {
   }
   _drawHoverPoint(params) {
     const {
-      options: {
-        hoverRender,
-        normalPointStyle,
-        clusterPointStyle
-      },
+      options: { hoverRender, normalPointStyle, clusterPointStyle },
       renderEngine,
-      renderEngine: {
-        hoverCanvas,
-        hoverCanvasCtx
-      }
+      renderEngine: { hoverCanvas, hoverCanvasCtx }
     } = this
     if (this._isFunction(hoverRender)) {
       const margin = 20
       const {
         isCluster,
         data: {
-          coordinate: {
-            x,
-            y
-          }
+          coordinate: { x, y }
         }
       } = params
       const style = isCluster ? clusterPointStyle : normalPointStyle
-      const {
-        width,
-        height
-      } = style
+      const { width, height } = style
       const canvasWidth = width + margin
       const canvasHeight = height + margin
       const canvasLeft = x - canvasWidth / 2
@@ -432,7 +368,10 @@ class Cluster {
       hoverCanvas.style.cursor = 'pointer'
       renderEngine.setCanvasSize(hoverCanvas, canvasWidth, canvasHeight)
       hoverCanvasCtx.save()
-      hoverCanvasCtx.translate(-canvasLeft * pixelRatio, -canvasTop * pixelRatio)
+      hoverCanvasCtx.translate(
+        -canvasLeft * pixelRatio,
+        -canvasTop * pixelRatio
+      )
       hoverRender(
         hoverCanvasCtx,
         canvasLeft + margin / 2,
@@ -447,9 +386,7 @@ class Cluster {
   _clearHoverPoint() {
     const {
       renderEngine,
-      renderEngine: {
-        hoverCanvas
-      }
+      renderEngine: { hoverCanvas }
     } = this
     renderEngine.setCanvasSize(hoverCanvas, 0, 0)
   }
@@ -458,10 +395,7 @@ class Cluster {
     const {
       points,
       _constains,
-      options: {
-        normalPointStyle,
-        clusterPointStyle
-      }
+      options: { normalPointStyle, clusterPointStyle }
     } = this
     const _clusterPoints = []
     const _normalPoints = []
@@ -488,18 +422,9 @@ class Cluster {
   }
   _constains(p1, p2, style) {
     // 绘画的时候是以 `p1` 作为中心点
-    const {
-      width,
-      height
-    } = style
-    const {
-      x: x1,
-      y: y1
-    } = p1
-    const {
-      x: x2,
-      y: y2
-    } = p2
+    const { width, height } = style
+    const { x: x1, y: y1 } = p1
+    const { x: x2, y: y2 } = p2
     return (
       x2 >= x1 - width / 2 &&
       x2 <= x1 + width / 2 &&
@@ -509,10 +434,7 @@ class Cluster {
   }
   _getExtendedBounds() {
     const {
-      options: {
-        map,
-        gridSize
-      }
+      options: { map, gridSize }
     } = this
     const zoom = map.getZoom()
     const bounds = map.getBounds()
@@ -531,11 +453,8 @@ class Cluster {
   }
   _pointInScreen(bounds, coordinate) {
     const [tr, bl] = bounds
-    const {
-      x,
-      y
-    } = coordinate
-    return bl.x <= 0 || x >= tr.x && x <= bl.x && y >= tr.y && y <= bl.y
+    const { x, y } = coordinate
+    return bl.x <= 0 || (x >= tr.x && x <= bl.x && y >= tr.y && y <= bl.y)
   }
   _isFunction(fn) {
     return typeof fn === 'function'

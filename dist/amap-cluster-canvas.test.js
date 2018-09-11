@@ -83,6 +83,7 @@
       this.clusterCanvas = null;
       this.clusterCanvasCxt = null;
       this.options = options;
+      this.pixelRatio = this.getPixelRatio();
       this._init();
     }
 
@@ -127,7 +128,8 @@
     }, {
       key: 'setCanvasSize',
       value: function setCanvasSize(canvas, w, h) {
-        var pixelRatio = this.getPixelRatio();
+        var pixelRatio = this.pixelRatio;
+
         canvas.width = w * pixelRatio;
         canvas.height = h * pixelRatio;
         canvas.style.width = w + 'px';
@@ -324,7 +326,9 @@
             render = _options.render,
             normalPointStyle = _options.normalPointStyle,
             clusterPointStyle = _options.clusterPointStyle,
-            clusterCanvasCxt = this.renderEngine.clusterCanvasCxt;
+            _renderEngine = this.renderEngine,
+            pixelRatio = _renderEngine.pixelRatio,
+            clusterCanvasCxt = _renderEngine.clusterCanvasCxt;
 
         if (this.renderTimer) {
           clearTimeout(this.renderTimer);
@@ -347,7 +351,7 @@
               height = style.height;
           // 定位到中心位置
 
-          render(clusterCanvasCxt, x - width / 2, y - height / 2, width, height, {
+          render(clusterCanvasCxt, (x - width / 2) * pixelRatio, (y - height / 2) * pixelRatio, width, height, {
             isCluster: isCluster,
             data: point
           });
@@ -635,9 +639,9 @@
             normalPointStyle = _options6.normalPointStyle,
             clusterPointStyle = _options6.clusterPointStyle,
             renderEngine = this.renderEngine,
-            _renderEngine = this.renderEngine,
-            hoverCanvas = _renderEngine.hoverCanvas,
-            hoverCanvasCtx = _renderEngine.hoverCanvasCtx;
+            _renderEngine2 = this.renderEngine,
+            hoverCanvas = _renderEngine2.hoverCanvas,
+            hoverCanvasCtx = _renderEngine2.hoverCanvasCtx;
 
         if (this._isFunction(hoverRender)) {
           var margin = 20;
@@ -799,11 +803,11 @@
   var data = [];
   var longitude = 117.000923;
   var latitude = 36.675807;
-  for (var i = 0; i < 100000; i++) {
+  for (var i = 0; i < 100; i++) {
     data.push([random(longitude, 5), random(latitude, 5)]);
   }
   var map = new AMap.Map('container', {
-    zoom: 11,
+    zoom: 3,
     center: [longitude, latitude]
   });
   // `cluster` 依赖 `AMap.CustomLayer`
