@@ -12,7 +12,14 @@
   },
   "keywords": [
     "amap",
-    "cluster"
+    "cluster",
+    "canvas",
+    "amap-cluster",
+    "amap-canvas",
+    "amap-cluster-canvas",
+    "高德",
+    "高德地图",
+    "点聚合"
   ],
   "author": "liuweigl",
   "license": "ISC",
