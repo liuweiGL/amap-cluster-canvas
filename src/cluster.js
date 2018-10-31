@@ -1,4 +1,3 @@
-import Canvas from './canvas'
 import ClusterItem from './clusterItem'
 import { lonLat2Mercator, mercator2LonLat } from './utils'
 
@@ -85,7 +84,7 @@ class Cluster {
     // 清理画布
     this.renderEngine.clearCluster()
     // 绘制
-    points.forEach((point) => {
+    points.forEach((point,index) => {
       const pixel = this.pixelFn(point.coordinate)
       const { x, y } = pixel
       const isCluster = this._isCluster(point)
@@ -99,9 +98,11 @@ class Cluster {
         width,
         height,
         {
+          index,
           isCluster,
           data: point
-        }
+        },
+        points
       )
     })
     if (debug) {
