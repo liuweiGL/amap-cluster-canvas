@@ -340,7 +340,7 @@
         // 清理画布
         this.renderEngine.clearCluster();
         // 绘制
-        points.forEach(function (point) {
+        points.forEach(function (point, index) {
           var pixel = _this.pixelFn(point.coordinate);
           var x = pixel.x,
               y = pixel.y;
@@ -352,9 +352,10 @@
           // 定位到中心位置
 
           render(clusterCanvasCxt, (x - width / 2) * pixelRatio, (y - height / 2) * pixelRatio, width, height, {
+            index: index,
             isCluster: isCluster,
             data: point
-          });
+          }, points);
         });
         {
           console.timeEnd('绘制时间：');

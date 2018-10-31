@@ -1,3 +1,4 @@
+import Canvas from './canvas'
 import ClusterItem from './clusterItem'
 import { lonLat2Mercator, mercator2LonLat } from './utils'
 
