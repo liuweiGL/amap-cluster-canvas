@@ -85,7 +85,7 @@ class Cluster {
     // 清理画布
     this.renderEngine.clearCluster()
     // 绘制
-    points.forEach((point,index) => {
+    points.forEach((point, index) => {
       const pixel = this.pixelFn(point.coordinate)
       const { x, y } = pixel
       const isCluster = this._isCluster(point)
@@ -111,9 +111,8 @@ class Cluster {
     }
   }
   setData(data) {
-    this.data = data
+    this.data = data || []
     this._buildCluster()
-    this.render()
   }
   _init(data) {
     // 根据聚合策略使用不同的聚合构建器
@@ -186,11 +185,9 @@ class Cluster {
       console.time('聚合构建时间：')
     }
     this.clusterItems = []
-    if (this.data) {
-      this.buildFn()
-      this._updatePoints()
-      this.render()
-    }
+    this.buildFn()
+    this._updatePoints()
+    this.render()
     if (debug) {
       console.timeEnd('聚合构建时间：')
       console.log('%c构建聚合模块数量：' + this.points.length, 'color: red')
@@ -259,9 +256,6 @@ class Cluster {
     const {
       options: { map }
     } = this
-    // 更新视图
-    // map.on('moveend', this._buildCluster.bind(this))
-    // map.on('zoomchange', this._buildCluster.bind(this))
     // 实现canvas事件
     map.on('click', this._clickHandler.bind(this)) // => point click 事件
     map.on('mousemove', this._mousemoveHandler.bind(this)) // => point hover 事件
