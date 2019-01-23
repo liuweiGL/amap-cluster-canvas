@@ -8,7 +8,7 @@ export default {
   // (We could have three entries in the configuration array
   // instead of two, but it's quicker to generate multiple
   // builds from a single configuration where possible, using
-  // an array for the `output` option, where we can specify 
+  // an array for the `output` option, where we can specify
   // `file` and `format` for each target)
   input: 'test/index.js',
   output: {
@@ -20,13 +20,13 @@ export default {
     include: ['src/**', 'test/**']
   },
   plugins: [
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('development')
-    }),
-    babel({
+    replace( {
+      'process.env.NODE_ENV': JSON.stringify( 'development' )
+    } ),
+    babel( {
       exclude: 'node_modules/**'
-    }),
-    serve({
+    } ),
+    serve( {
       // Launch in browser (default: false)
       open: true,
 
@@ -44,8 +44,8 @@ export default {
 
       // Options used in setting up server
       host: 'localhost',
-      port: 3000,
-    }),
+      port: 3000
+    } ),
     livereload()
   ]
 }

@@ -1,0 +1,15 @@
+arrowParens: avoid
+bracketSpacing: false
+endOfLine: 'auto'
+htmlWhitespaceSensitivity: 'css'
+printWidth: 80
+proseWrap: 'never'
+semi: false
+singleQuote: true
+tabWidth: 2
+trailingComma: 'es5'
+useTabs: false
+overrides:
+  - files: '*.html'
+    options:
+      parser: 'angular'

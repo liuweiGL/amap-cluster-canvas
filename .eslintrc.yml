@@ -1,0 +1,10 @@
+extends:
+  - standard
+rules:
+  space-before-function-paren:
+    - 0
+  space-in-parens:
+    - error
+    - always
+globals:
+  AMap: true
