@@ -1,8 +1,6 @@
-import { getOffset } from './utils'
 export default class Event {
   constructor( cluster ) {
     this.hoverPoint = null
-    this.zooming = false
     this.cluster = cluster
     this.map = cluster.options.map
     this.click = cluster.options.clickHandler
@@ -10,73 +8,54 @@ export default class Event {
     this.mouseover = cluster.options.mouseoverHandler
     this.mousemove = cluster.options.mousemoveHandler
     this.zoomOnClick = cluster.options.zoomOnClick
-    this.normalOffset = getOffset(
-      cluster.options.normalPointStyle,
-      cluster.options.offset
-    )
-    this.clusterOffset = getOffset(
-      cluster.options.clusterPointStyle,
-      cluster.options.offset
-    )
     this.initEvent()
   }
   initEvent() {
     this.map.on( 'click', this.clickHandler.bind( this ) )
     this.map.on( 'mousemove', this.mousemoveHandler.bind( this ) )
     this.map.on( 'zoomstart', this.zoomstartHandler.bind( this ) )
-    this.map.on( 'zoomend', this.zoomendHandler.bind( this ) )
   }
   clickHandler( event ) {
     const { pixel } = event
     const point = this.findPoint( pixel )
     if ( point ) {
-      const isCluster = this.cluster.isCluster( point )
-      const params = {
-        isCluster,
-        data: point
-      }
+      const params = this.cluster.getParams( point )
       // 触发 `mouseout`
       this.mouseoutHandler( point )
       // 点击聚合点展开聚合
-      this.zoomOnClick && isCluster && this.zoomOnClickHandler( point )
+      this.zoomOnClick && params.isCluster && this.zoomOnClickHandler( point )
       this.cluster.isFunction( this.click ) && this.click( params )
     }
   }
   // 由`mousemove`衍生出 `mouseout` & `mouseover`
   mousemoveHandler( event ) {
     const { pixel } = event
-    let point = this.hoverPoint
-
-    if ( !( !this.zooming && point && this.constains( point, pixel ) ) ) {
-      point = this.findPoint( pixel )
-      this.mouseoutHandler( point )
+    const hoverPoint = this.hoverPoint
+    const point = this.findPoint( pixel )
+    // 先触发 mouseout 事件
+    if ( hoverPoint && !this.constains( hoverPoint, pixel ) ) {
+      this.mouseoutHandler()
+    }
+    // 后触发 mouseover 事件
+    if ( point && hoverPoint !== point ) {
       this.mouseoverHandler( point )
     }
     this.cluster.isFunction( this.mousemove ) && this.mousemove( event, point )
   }
-  mouseoutHandler( point ) {
-    if ( this.hoverPoint ) {
-      this.cluster.clearHoverPoint()
-      this.cluster.isFunction( this.mouseout ) &&
-        this.mouseout( this.cluster.getParams( this.hoverPoint ) )
-    }
-    this.hoverPoint = point
-  }
   mouseoverHandler( point ) {
-    if ( point ) {
-      const params = this.cluster.getParams( point )
-      this.cluster.renderHoverPoint( params )
-      this.cluster.isFunction( this.mouseover ) && this.mouseover( params )
-    }
+    this.hoverPoint = point
+    const params = this.cluster.getParams( point )
+    this.cluster.renderHoverPoint( params )
+    this.cluster.isFunction( this.mouseover ) && this.mouseover( params )
   }
-  zoomstartHandler() {
-    this.zooming = true
-    this.cluster.clearHoverPoint()
-  }
-  zoomendHandler() {
-    this.zooming = false
+  mouseoutHandler() {
     this.hoverPoint = null
     this.cluster.clearHoverPoint()
+    this.cluster.isFunction( this.mouseout ) &&
+      this.mouseout( this.cluster.getParams( this.hoverPoint ) )
+  }
+  zoomstartHandler() {
+    this.mouseoutHandler()
   }
   zoomOnClickHandler( point ) {
     const {
@@ -101,19 +80,20 @@ export default class Event {
   }
   // pixel 坐标是否在 point 范围内
   constains( point, pixel ) {
-    const offset = this.cluster.isCluster( point )
-      ? this.clusterOffset
-      : this.normalOffset
-    const { width, height } = offset
+    const params = this.cluster.getParams( point )
+    const {
+      offset: [offsetX, offsetY],
+      style: { width, height }
+    } = params
     const {
       renderPixel: { x: x1, y: y1 }
     } = point
     const { x: x2, y: y2 } = pixel
     return (
-      x2 >= x1 + width[0] &&
-      x2 <= x1 + width[1] &&
-      y2 >= y1 + height[0] &&
-      y2 <= y1 + height[1]
+      x2 >= x1 + offsetX &&
+      x2 <= x1 + width + offsetX &&
+      y2 >= y1 + offsetY &&
+      y2 <= y1 + height + offsetY
     )
   }
 }

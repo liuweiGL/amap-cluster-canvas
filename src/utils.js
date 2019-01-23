@@ -44,15 +44,11 @@ function getOffsetValue( value, offset ) {
       return Number.parseFloat( offset )
   }
 }
+// 解析 offset 参数
 export function getOffset( style, offset ) {
   if ( !Array.isArray( offset ) ) {
-    return style
+    return [0, 0]
   }
   const { width, height } = style
-  const widthOffset = getOffsetValue( width, offset[0] )
-  const heightOffset = getOffsetValue( height, offset[1] )
-  return {
-    width: [widthOffset, width + widthOffset],
-    height: [heightOffset, height + heightOffset]
-  }
+  return [getOffsetValue( width, offset[0] ), getOffsetValue( height, offset[1] )]
 }

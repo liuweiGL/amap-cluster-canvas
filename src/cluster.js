@@ -3,6 +3,7 @@ import ClusterItem from './clusterItem'
 import AmapCoordinate from './amap.coordinate'
 import MercatorCoordinate from './mercator.coordinate'
 import Event from './event'
+import { getOffset } from './utils'
 
 // 开发环境输出日志
 const debug = process.env.NODE_ENV === 'development'
@@ -20,6 +21,7 @@ const defaultStyle = {
 }
 // 聚合默认设置
 const defaultOptions = {
+  data: null, // 数据集
   coordinate: Coordinate.AMAP, // 聚合策略
   maxZoom: 18, // 最大的聚合级别，大于该级别就不进行相应的聚合
   gridSize: 60, // 聚合计算时，网格的像素大小
@@ -50,11 +52,13 @@ const defaultOptions = {
 export default class Cluster {
   constructor( options ) {
     this.data = null
-    this.renderData = null
     this.points = []
+    this.renderData = null
     this.clusterItems = null
     this.options = Object.assign( {}, defaultOptions, options )
     this.options.data = null
+    this.normalOffset = getOffset( this.options.normalPointStyle, options.offset )
+    this.clusterOffset = getOffset( this.options.clusterPointStyle, options.offset )
     this.eventEngine = new Event( this )
     this.renderEngine = new Canvas( {
       map: this.options.map,
@@ -184,6 +188,7 @@ export default class Cluster {
     // 绘制
     points.forEach( ( point, index ) => {
       const params = this.getParams( point )
+      params.index = index
       // 定位到中心位置
       render(
         clusterCanvasCxt,
@@ -191,11 +196,7 @@ export default class Cluster {
         point.renderPixel.y * pixelRatio,
         params.style.width,
         params.style.height,
-        {
-          index,
-          data: params.data,
-          isCluster: params.isCluster
-        },
+        params,
         points
       )
     } )
@@ -248,13 +249,19 @@ export default class Cluster {
     return this.points
   }
   getParams( point ) {
+    let offset = this.normalOffset
+    let style = this.options.normalPointStyle
     const isCluster = this.isCluster( point )
+
+    if ( isCluster ) {
+      offset = this.clusterOffset
+      style = this.options.clusterPointStyle
+    }
     return {
       isCluster,
-      data: point,
-      style: isCluster
-        ? this.options.clusterPointStyle
-        : this.options.normalPointStyle
+      offset,
+      style,
+      data: point
     }
   }
   isCluster( point ) {
