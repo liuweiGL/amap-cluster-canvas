@@ -34,7 +34,8 @@ const defaultOptions = {
   getPosition( item ) {
     // 获取经纬度信息
     const { location } = item
-    return location ? [location.longitude, location.latitude] : null
+    const { longitude, latitude } = location || {}
+    return longitude && latitude ? [longitude, latitude] : null
   },
   render: null, // 绘制函数
   hoverRender: null, // hover状态下的绘制函数
@@ -59,7 +60,10 @@ export default class Cluster {
     // 解除 data 引用
     this.options.data = null
     this.normalOffset = getOffset( this.options.normalPointStyle, options.offset )
-    this.clusterOffset = getOffset( this.options.clusterPointStyle, options.offset )
+    this.clusterOffset = getOffset(
+      this.options.clusterPointStyle,
+      options.offset
+    )
     this.eventEngine = new Event( this )
     this.renderEngine = new Canvas( {
       map: this.options.map,
@@ -80,8 +84,11 @@ export default class Cluster {
     this.data = []
     if ( data ) {
       data.forEach( item => {
-        item.position = getPosition( item )
-        this.data.push( item )
+        const position = getPosition( item )
+        if ( position ) {
+          item.position = position
+          this.data.push( item )
+        }
       } )
     }
     if ( rebuild ) {

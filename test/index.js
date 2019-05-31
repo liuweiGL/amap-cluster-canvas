@@ -34,6 +34,7 @@ function initCanvasCluster( options ) {
   AMap.plugin( 'AMap.CustomLayer', function() {
     const cluster = new Cluster( {
       data,
+      gridSize: 80,
       map: options.map,
       type: options.type,
       averageCenter: true,
@@ -127,8 +128,8 @@ initCanvasCluster({
   map: amapMap,
   type: Coordinate.AMAP,
 })
-initCanvasCluster({
-  map: mercatorMap,
-  type: Coordinate.MERCATOR,
-})
-initAmapCluster(markerMap)
+// initCanvasCluster({
+//   map: mercatorMap,
+//   type: Coordinate.MERCATOR,
+// })
+// initAmapCluster(markerMap)

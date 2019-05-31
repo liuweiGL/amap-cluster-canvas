@@ -1,6 +1,6 @@
 {
   "name": "amap-cluster-canvas",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "高德地图点聚合插件canvas版本",
   "main": "dist/amap-cluster-canvas.cjs.js",
   "module": "dist/amap-cluster-canvas.esm.js",

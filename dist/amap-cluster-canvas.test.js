@@ -356,21 +356,17 @@
       default:
         return Number.parseFloat(offset);
     }
-  }
+  } // 解析 offset 参数
+
 
   function getOffset(style, offset) {
     if (!Array.isArray(offset)) {
-      return style;
+      return [0, 0];
     }
 
     var width = style.width,
         height = style.height;
-    var widthOffset = getOffsetValue(width, offset[0]);
-    var heightOffset = getOffsetValue(height, offset[1]);
-    return {
-      width: [widthOffset, width + widthOffset],
-      height: [heightOffset, height + heightOffset]
-    };
+    return [getOffsetValue(width, offset[0]), getOffsetValue(height, offset[1])];
   }
 
   var MercatorCoordinate =
@@ -459,7 +455,6 @@
       _classCallCheck(this, Event);
 
       this.hoverPoint = null;
-      this.zooming = false;
       this.cluster = cluster;
       this.map = cluster.options.map;
       this.click = cluster.options.clickHandler;
@@ -467,8 +462,6 @@
       this.mouseover = cluster.options.mouseoverHandler;
       this.mousemove = cluster.options.mousemoveHandler;
       this.zoomOnClick = cluster.options.zoomOnClick;
-      this.normalOffset = getOffset(cluster.options.normalPointStyle, cluster.options.offset);
-      this.clusterOffset = getOffset(cluster.options.clusterPointStyle, cluster.options.offset);
       this.initEvent();
     }
 
@@ -478,7 +471,6 @@
         this.map.on('click', this.clickHandler.bind(this));
         this.map.on('mousemove', this.mousemoveHandler.bind(this));
         this.map.on('zoomstart', this.zoomstartHandler.bind(this));
-        this.map.on('zoomend', this.zoomendHandler.bind(this));
       }
     }, {
       key: "clickHandler",
@@ -487,15 +479,11 @@
         var point = this.findPoint(pixel);
 
         if (point) {
-          var isCluster = this.cluster.isCluster(point);
-          var params = {
-            isCluster: isCluster,
-            data: point // 触发 `mouseout`
+          var params = this.cluster.getParams(point); // 触发 `mouseout`
 
-          };
           this.mouseoutHandler(point); // 点击聚合点展开聚合
 
-          this.zoomOnClick && isCluster && this.zoomOnClickHandler(point);
+          this.zoomOnClick && params.isCluster && this.zoomOnClickHandler(point);
           this.cluster.isFunction(this.click) && this.click(params);
         }
       } // 由`mousemove`衍生出 `mouseout` & `mouseover`
@@ -504,47 +492,39 @@
       key: "mousemoveHandler",
       value: function mousemoveHandler(event) {
         var pixel = event.pixel;
-        var point = this.hoverPoint;
+        var hoverPoint = this.hoverPoint;
+        var point = this.findPoint(pixel); // 先触发 mouseout 事件
 
-        if (!(!this.zooming && point && this.constains(point, pixel))) {
-          point = this.findPoint(pixel);
-          this.mouseoutHandler(point);
+        if (hoverPoint && !this.constains(hoverPoint, pixel)) {
+          this.mouseoutHandler();
+        } // 后触发 mouseover 事件
+
+
+        if (point && hoverPoint !== point) {
           this.mouseoverHandler(point);
         }
 
         this.cluster.isFunction(this.mousemove) && this.mousemove(event, point);
       }
     }, {
-      key: "mouseoutHandler",
-      value: function mouseoutHandler(point) {
-        if (this.hoverPoint) {
-          this.cluster.clearHoverPoint();
-          this.cluster.isFunction(this.mouseout) && this.mouseout(this.cluster.getParams(this.hoverPoint));
-        }
-
-        this.hoverPoint = point;
-      }
-    }, {
       key: "mouseoverHandler",
       value: function mouseoverHandler(point) {
-        if (point) {
-          var params = this.cluster.getParams(point);
-          this.cluster.renderHoverPoint(params);
-          this.cluster.isFunction(this.mouseover) && this.mouseover(params);
-        }
+        this.hoverPoint = point;
+        var params = this.cluster.getParams(point);
+        this.cluster.renderHoverPoint(params);
+        this.cluster.isFunction(this.mouseover) && this.mouseover(params);
+      }
+    }, {
+      key: "mouseoutHandler",
+      value: function mouseoutHandler() {
+        this.hoverPoint = null;
+        this.cluster.clearHoverPoint();
+        this.cluster.isFunction(this.mouseout) && this.mouseout(this.cluster.getParams(this.hoverPoint));
       }
     }, {
       key: "zoomstartHandler",
       value: function zoomstartHandler() {
-        this.zooming = true;
-        this.cluster.clearHoverPoint();
-      }
-    }, {
-      key: "zoomendHandler",
-      value: function zoomendHandler() {
-        this.zooming = false;
-        this.hoverPoint = null;
-        this.cluster.clearHoverPoint();
+        this.mouseoutHandler();
       }
     }, {
       key: "zoomOnClickHandler",
@@ -578,15 +558,21 @@
     }, {
       key: "constains",
       value: function constains(point, pixel) {
-        var offset = this.cluster.isCluster(point) ? this.clusterOffset : this.normalOffset;
-        var width = offset.width,
-            height = offset.height;
+        var params = this.cluster.getParams(point);
+
+        var _params$offset = _slicedToArray(params.offset, 2),
+            offsetX = _params$offset[0],
+            offsetY = _params$offset[1],
+            _params$style = params.style,
+            width = _params$style.width,
+            height = _params$style.height;
+
         var _point$renderPixel2 = point.renderPixel,
             x1 = _point$renderPixel2.x,
             y1 = _point$renderPixel2.y;
         var x2 = pixel.x,
             y2 = pixel.y;
-        return x2 >= x1 + width[0] && x2 <= x1 + width[1] && y2 >= y1 + height[0] && y2 <= y1 + height[1];
+        return x2 >= x1 + offsetX && x2 <= x1 + width + offsetX && y2 >= y1 + offsetY && y2 <= y1 + height + offsetY;
       }
     }]);
 
@@ -606,6 +592,8 @@
 
   };
   var defaultOptions = {
+    data: null,
+    // 数据集
     coordinate: Coordinate.AMAP,
     // 聚合策略
     maxZoom: 18,
@@ -627,7 +615,12 @@
     getPosition: function getPosition(item) {
       // 获取经纬度信息
       var location = item.location;
-      return location ? [location.longitude, location.latitude] : null;
+
+      var _ref = location || {},
+          longitude = _ref.longitude,
+          latitude = _ref.latitude;
+
+      return longitude && latitude ? [longitude, latitude] : null;
     },
     render: null,
     // 绘制函数
@@ -659,11 +652,14 @@
       _classCallCheck(this, Cluster);
 
       this.data = null;
-      this.renderData = null;
       this.points = [];
+      this.renderData = null;
       this.clusterItems = null;
-      this.options = Object.assign({}, defaultOptions, options);
+      this.options = Object.assign({}, defaultOptions, options); // 解除 data 引用
+
       this.options.data = null;
+      this.normalOffset = getOffset(this.options.normalPointStyle, options.offset);
+      this.clusterOffset = getOffset(this.options.clusterPointStyle, options.offset);
       this.eventEngine = new Event(this);
       this.renderEngine = new Canvas({
         map: this.options.map,
@@ -671,7 +667,7 @@
         visible: this.options.visible,
         render: this.build.bind(this)
       });
-      this.coordinateEngine = options.coordinate === Coordinate.AMAP ? new AmapCoordinate(this.options) : new MercatorCoordinate(this.options);
+      this.coordinateEngine = this.options.coordinate === Coordinate.AMAP ? new AmapCoordinate(this.options) : new MercatorCoordinate(this.options);
       this.setData(options.data, false);
     }
 
@@ -686,9 +682,13 @@
 
         if (data) {
           data.forEach(function (item) {
-            item.position = getPosition(item);
+            var position = getPosition(item);
 
-            _this.data.push(item);
+            if (position) {
+              item.position = position;
+
+              _this.data.push(item);
+            }
           });
         }
 
@@ -821,14 +821,11 @@
         this.clearCluster(); // 绘制
 
         points.forEach(function (point, index) {
-          var params = _this3.getParams(point); // 定位到中心位置
+          var params = _this3.getParams(point);
 
+          params.index = index; // 定位到中心位置
 
-          render(clusterCanvasCxt, point.renderPixel.x * pixelRatio, point.renderPixel.y * pixelRatio, params.style.width, params.style.height, {
-            index: index,
-            data: params.data,
-            isCluster: params.isCluster
-          }, points);
+          render(clusterCanvasCxt, point.renderPixel.x * pixelRatio, point.renderPixel.y * pixelRatio, params.style.width, params.style.height, params, points);
         });
 
         {
@@ -894,11 +891,20 @@
     }, {
       key: "getParams",
       value: function getParams(point) {
+        var offset = this.normalOffset;
+        var style = this.options.normalPointStyle;
         var isCluster = this.isCluster(point);
+
+        if (isCluster) {
+          offset = this.clusterOffset;
+          style = this.options.clusterPointStyle;
+        }
+
         return {
           isCluster: isCluster,
-          data: point,
-          style: isCluster ? this.options.clusterPointStyle : this.options.normalPointStyle
+          offset: offset,
+          style: style,
+          data: point
         };
       }
     }, {
@@ -954,6 +960,7 @@
     AMap.plugin('AMap.CustomLayer', function () {
       var cluster = new Cluster({
         data: data,
+        gridSize: 80,
         map: options.map,
         type: options.type,
         averageCenter: true,
@@ -1023,19 +1030,6 @@
     });
   }
 
-  function initAmapCluster(map) {
-    var markers = data.map(function (item) {
-      return new AMap.Marker({
-        position: item
-      });
-    });
-    /*eslint-disable*/
-
-    new AMap.MarkerClusterer(map, markers, {
-      gridSize: 60
-    });
-  }
-
   var amapMap = new AMap.Map('amap', {
     zoom: 6,
     center: [longitude, latitude]
@@ -1051,12 +1045,11 @@
   initCanvasCluster({
     map: amapMap,
     type: Coordinate.AMAP
-  });
-  initCanvasCluster({
-    map: mercatorMap,
-    type: Coordinate.MERCATOR
-  });
-  initAmapCluster(markerMap);
+  }); // initCanvasCluster({
+  //   map: mercatorMap,
+  //   type: Coordinate.MERCATOR,
+  // })
+  // initAmapCluster(markerMap)
 
 }());
 //# sourceMappingURL=amap-cluster-canvas.test.js.map
