@@ -56,6 +56,7 @@ export default class Cluster {
     this.renderData = null
     this.clusterItems = null
     this.options = Object.assign( {}, defaultOptions, options )
+    // 解除 data 引用
     this.options.data = null
     this.normalOffset = getOffset( this.options.normalPointStyle, options.offset )
     this.clusterOffset = getOffset( this.options.clusterPointStyle, options.offset )
@@ -67,7 +68,7 @@ export default class Cluster {
       render: this.build.bind( this )
     } )
     this.coordinateEngine =
-      options.coordinate === Coordinate.AMAP
+      this.options.coordinate === Coordinate.AMAP
         ? new AmapCoordinate( this.options )
         : new MercatorCoordinate( this.options )
     this.setData( options.data, false )
