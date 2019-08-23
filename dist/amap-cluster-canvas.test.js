@@ -462,15 +462,25 @@
       this.mouseover = cluster.options.mouseoverHandler;
       this.mousemove = cluster.options.mousemoveHandler;
       this.zoomOnClick = cluster.options.zoomOnClick;
+      this.clickHandler = this.clickHandler.bind(this);
+      this.mousemoveHandler = this.mousemoveHandler.bind(this);
+      this.zoomstartHandler = this.zoomstartHandler.bind(this);
       this.initEvent();
     }
 
     _createClass(Event, [{
       key: "initEvent",
       value: function initEvent() {
-        this.map.on('click', this.clickHandler.bind(this));
-        this.map.on('mousemove', this.mousemoveHandler.bind(this));
-        this.map.on('zoomstart', this.zoomstartHandler.bind(this));
+        this.map.on('click', this.clickHandler);
+        this.map.on('mousemove', this.mousemoveHandler);
+        this.map.on('zoomstart', this.zoomstartHandler);
+      }
+    }, {
+      key: "off",
+      value: function off() {
+        this.map.off('click', this.clickHandler);
+        this.map.off('mousemove', this.mousemoveHandler);
+        this.map.off('zoomstart', this.zoomstartHandler);
       }
     }, {
       key: "clickHandler",
@@ -916,6 +926,17 @@
       key: "isFunction",
       value: function isFunction(fn) {
         return typeof fn === 'function';
+      }
+    }, {
+      key: "destroy",
+      value: function destroy() {
+        clearTimeout(this.renderTimer);
+        this.eventEngine.off();
+        this.renderEngine.layer.hide();
+        this.data = null;
+        this.points = null;
+        this.renderData = null;
+        this.clusterItems = null;
       }
     }]);
 
