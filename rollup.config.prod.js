@@ -15,17 +15,20 @@ export default {
   input: 'src/cluster.js',
   output: [
     {
-      name: 'amap-cluster-canvas',
+      name: 'Cluster',
+      exports: 'named',
       file: pkg.browser,
       format: 'umd',
       sourcemap: true
     },
     {
+      exports: 'named',
       file: pkg.main,
       format: 'cjs',
       sourcemap: true
     },
     {
+      exports: 'named',
       file: pkg.module,
       format: 'es',
       sourcemap: true
